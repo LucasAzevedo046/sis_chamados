@@ -2,8 +2,7 @@
 @contentType = application/json
 
 ### 1) Healthcheck
-GET {{baseUrl}}/health
-
+GET {{baseUrl}}/
 
 ### 2) Teste do banco
 GET {{baseUrl}}/db
@@ -16,8 +15,8 @@ POST {{baseUrl}}/usuarios
 Content-Type: {{contentType}}
 
 {
-  "nome": "Cliente Teste",
-  "email": "cliente.teste01@email.com",
+  "nome": "Cliente Teste 3",
+  "email": "cliente.teste03@email.com",
   "senha": "123456"
 }
 
