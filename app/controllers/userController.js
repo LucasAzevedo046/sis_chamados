@@ -62,6 +62,24 @@ async function createUser(req, res) {
   }
 }
 
+async function getMe(req, res) {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, nome, email, role, created_at, updated_at FROM usuarios WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'usuário não encontrado' });
+    }
+
+    return res.json(rows[0]);
+  } catch (err) {
+    return res.status(500).json({ error: 'erro interno', detail: err.message });
+  }
+}
+
 module.exports = {
   createUser,
+  getMe
 };
