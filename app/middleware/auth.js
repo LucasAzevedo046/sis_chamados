@@ -7,7 +7,7 @@ function auth(req, res, next) {
     return res.status(401).json(
       { error: 'Token não informado' });
   }
-
+  
   const [type, token] = header.split(' ');
 
   if (type !== 'Bearer' || !token) {
