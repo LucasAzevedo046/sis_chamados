@@ -4,6 +4,7 @@ const express = require('express');
 const pool = require('./database/db');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,7 @@ app.get('/db', async (req, res) => {
 
 app.use(userRoutes);
 app.use(authRoutes);
+app.use(ticketRoutes);
 
 const PORT = Number(process.env.PORT || 3000);
 app.listen(PORT, () => {

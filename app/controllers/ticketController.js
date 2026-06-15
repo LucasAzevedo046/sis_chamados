@@ -88,7 +88,7 @@ async function listTickets(req, res) {
     sql += ' ORDER BY c.updated_at DESC';
 
     const [rows] = await pool.query(sql, params);
-    
+
     return res.json(rows);
   } catch (err) {
     return res.status(500).json({ error: 'erro interno', detail: err.message });
