@@ -87,7 +87,7 @@ POST {{baseUrl}}/login
 Content-Type: {{contentType}}
 
 {
-  "email": "cliente.teste02@email.com",
+  "email": "admin@email.com",
   "senha": "123456"
 }
 

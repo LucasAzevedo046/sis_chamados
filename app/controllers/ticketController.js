@@ -9,18 +9,21 @@ async function createTicket(req, res) {
   try {
     const { assunto, descricao } = req.body;
 
-    // regra didática (você pode deixar ADMIN criar para testes)
-    if (req.user.role !== 'CLIENTE' && req.user.role !== 'ADMINISTRADOR') {
-      return res.status(403).json({ error: 'Apenas CLIENTE pode abrir chamado (ou ADMINISTRADOR para testes).' });
+    if (req.user.role !== 'CLIENTE' 
+        && req.user.role !== 'ADMINISTRADOR') {
+      return res.status(403).json(
+        { error: `Apenas CLIENTE pode abrir chamado (ou 
+            ADMINISTRADOR para testes).` });
     }
 
     if (!assunto || String(assunto).trim().length < 3) {
-      return res.status(400).json({ error: 'assunto é obrigatório (mínimo 3 caracteres)' });
+      return res.status(400).json(
+        { error: 'assunto é obrigatório (mínimo 3 caracteres)' });
     }
 
-    // agora exigimos descrição para virar 1ª mensagem
     if (!descricao || String(descricao).trim().length < 3) {
-      return res.status(400).json({ error: 'descricao é obrigatória (mínimo 3 caracteres)' });
+      return res.status(400).json(
+        { error: 'descricao é obrigatória (mínimo 3 caracteres)'});
     }
 
     const assuntoNorm = String(assunto).trim();
@@ -31,7 +34,8 @@ async function createTicket(req, res) {
 
     // 1) cria o chamado
     const [resultTicket] = await conn.query(
-      'INSERT INTO chamados (status, assunto, cliente_id, atendente_id) VALUES (?, ?, ?, ?)',
+      `INSERT INTO chamados (status, assunto, cliente_id, 
+        atendente_id) VALUES (?, ?, ?, ?)`,
       ['A', assuntoNorm, req.user.id, null]
     );
 
@@ -39,7 +43,8 @@ async function createTicket(req, res) {
 
     // 2) cria a 1ª mensagem (descrição)
     const [resultMsg] = await conn.query(
-      'INSERT INTO mensagens_chamado (chamado_id, mensagem, usuario_id) VALUES (?, ?, ?)',
+      `INSERT INTO mensagens_chamado (chamado_id, mensagem, 
+        usuario_id) VALUES (?, ?, ?)`,
       [ticketId, descNorm, req.user.id]
     );
 
@@ -55,7 +60,8 @@ async function createTicket(req, res) {
     });
   } catch (err) {
     if (conn) await conn.rollback();
-    return res.status(500).json({ error: 'erro interno', detail: err.message });
+    return res.status(500).json(
+        { error: 'erro interno', detail: err.message });
   } finally {
     if (conn) conn.release();
   }
@@ -63,11 +69,12 @@ async function createTicket(req, res) {
 
 async function listTickets(req, res) {
   try {
-    const { status } = req.query; // opcional: A/E/F
+    const { status } = req.query;
 
     const params = [];
     let sql = `
-      SELECT c.id, c.status, c.assunto, c.cliente_id, c.atendente_id, c.created_at, c.updated_at
+      SELECT c.id, c.status, c.assunto, c.cliente_id, 
+      c.atendente_id, c.created_at, c.updated_at
       FROM chamados c
     `;
 
@@ -91,7 +98,8 @@ async function listTickets(req, res) {
 
     return res.json(rows);
   } catch (err) {
-    return res.status(500).json({ error: 'erro interno', detail: err.message });
+    return res.status(500).json(
+        { error: 'erro interno', detail: err.message });
   }
 }
 
@@ -103,12 +111,15 @@ async function getTicketById(req, res) {
     }
 
     const [tickets] = await pool.query(
-      'SELECT id, status, assunto, cliente_id, atendente_id, created_at, updated_at FROM chamados WHERE id = ? LIMIT 1',
+      `SELECT id, status, assunto, cliente_id, atendente_id, 
+        created_at, updated_at FROM chamados
+        WHERE id = ? LIMIT 1`,
       [ticketId]
     );
 
     if (tickets.length === 0) {
-      return res.status(404).json({ error: 'chamado não encontrado' });
+      return res.status(404).json(
+        { error: 'chamado não encontrado' });
     }
 
     const ticket = tickets[0];
@@ -123,8 +134,8 @@ async function getTicketById(req, res) {
 
     const [msgs] = await pool.query(
       `
-      SELECT m.id, m.chamado_id, m.mensagem, m.usuario_id, m.created_at,
-             u.nome AS usuario_nome, u.role AS usuario_role
+      SELECT m.id, m.chamado_id, m.mensagem, m.usuario_id, 
+      m.created_at, u.nome AS usuario_nome, u.role AS usuario_role
       FROM mensagens_chamado m
       JOIN usuarios u ON u.id = m.usuario_id
       WHERE m.chamado_id = ?
@@ -135,14 +146,17 @@ async function getTicketById(req, res) {
 
     return res.json({ ticket, mensagens: msgs });
   } catch (err) {
-    return res.status(500).json({ error: 'erro interno', detail: err.message });
+    return res.status(500).json(
+        { error: 'erro interno', detail: err.message });
   }
 }
 
 async function assumeTicket(req, res) {
   try {
     if (!isStaff(req.user.role)) {
-      return res.status(403).json({ error: 'Apenas ATENDENTE/ADMINISTRADOR pode assumir chamado' });
+      return res.status(403).json(
+        { error: `Apenas ATENDENTE/ADMINISTRADOR pode assumir 
+            chamado` });
     }
 
     const ticketId = Number(req.params.id);
@@ -151,30 +165,37 @@ async function assumeTicket(req, res) {
     }
 
     const [tickets] = await pool.query(
-      'SELECT id, status, atendente_id FROM chamados WHERE id = ? LIMIT 1',
+      `SELECT id, status, atendente_id FROM chamados
+       WHERE id = ? LIMIT 1`,
       [ticketId]
     );
-    if (tickets.length === 0) return res.status(404).json({ error: 'chamado não encontrado' });
+    if (tickets.length === 0) return res.status(404).json(
+        { error: 'chamado não encontrado' });
 
     const ticket = tickets[0];
 
     if (ticket.status === 'F') {
-      return res.status(400).json({ error: 'chamado fechado não pode ser assumido' });
+      return res.status(400).json(
+        { error: 'chamado fechado não pode ser assumido' });
     }
 
-    // assume se não tiver atendente
     if (ticket.atendente_id && req.user.role !== 'ADMINISTRADOR') {
-      return res.status(400).json({ error: 'chamado já possui atendente' });
+      return res.status(400).json(
+        { error: 'chamado já possui atendente' });
     }
 
     await pool.query(
-      'UPDATE chamados SET atendente_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      `UPDATE chamados SET atendente_id = ?, status = ?, 
+      updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [req.user.id, 'E', ticketId]
     );
 
-    return res.json({ ok: true, id: ticketId, atendente_id: req.user.id, status: 'E' });
+    return res.json(
+        { ok: true, id: ticketId, atendente_id: req.user.id, 
+            status: 'E' });
   } catch (err) {
-    return res.status(500).json({ error: 'erro interno', detail: err.message });
+    return res.status(500).json(
+        { error: 'erro interno', detail: err.message });
   }
 }
 
@@ -188,36 +209,41 @@ async function updateStatus(req, res) {
     }
 
     if (!status || !['A', 'E', 'F'].includes(status)) {
-      return res.status(400).json({ error: "status inválido. Use 'A', 'E' ou 'F'" });
+      return res.status(400).json(
+        { error: "status inválido. Use 'A', 'E' ou 'F'" });
     }
 
     const [tickets] = await pool.query(
-      'SELECT id, cliente_id, atendente_id, status FROM chamados WHERE id = ? LIMIT 1',
+      `SELECT id, cliente_id, atendente_id, status
+        FROM chamados WHERE id = ? LIMIT 1`,
       [ticketId]
     );
-    if (tickets.length === 0) return res.status(404).json({ error: 'chamado não encontrado' });
+    if (tickets.length === 0) return res.status(404).json(
+        { error: 'chamado não encontrado' });
 
     const ticket = tickets[0];
     const isOwner = ticket.cliente_id === req.user.id;
 
-    // regra simples:
-    // - ATENDENTE/ADMIN pode alterar para qualquer status
-    // - CLIENTE só pode fechar (F) o próprio chamado
     if (isStaff(req.user.role)) {
       // ok
     } else {
-      if (!isOwner) return res.status(403).json({ error: 'Acesso negado' });
-      if (status !== 'F') return res.status(403).json({ error: 'CLIENTE só pode fechar (F) o próprio chamado' });
+      if (!isOwner) return res.status(403).json(
+        { error: 'Acesso negado' });
+
+      if (status !== 'F') return res.status(403).json(
+        { error: 'CLIENTE só pode fechar (F) o próprio chamado' });
     }
 
     await pool.query(
-      'UPDATE chamados SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      `UPDATE chamados SET status = ?, 
+      updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [status, ticketId]
     );
 
     return res.json({ ok: true, id: ticketId, status });
   } catch (err) {
-    return res.status(500).json({ error: 'erro interno', detail: err.message });
+    return res.status(500).json(
+        { error: 'erro interno', detail: err.message });
   }
 }
 
